@@ -206,8 +206,16 @@ func joinConns(c1, c2 net.Conn) {
 		_, err := io.Copy(c2, c1)
 		errc <- err
 	}()
+
 	err := <-errc
-	if err != nil && !errors.Is(err, io.EOF) && !errors.Is(err, context.Canceled) {
+
+	switch {
+	case
+		errors.Is(err, io.EOF),
+		errors.Is(err, context.Canceled),
+		errors.Is(err, io.ErrClosedPipe):
+		return
+	case err != nil:
 		log.Warn().Err(err).Msg("error copying data between connections")
 	}
 }
